@@ -4,7 +4,6 @@ const fs = require('fs')
 const url = require('url')
 const axios = require('axios')
 const moment = require('moment')
-const request = require('request')
 const iconvLite = require('iconv-lite')
 
 const app = express()
@@ -41,12 +40,13 @@ app.get('/', (req, res) => {
           ].collectionImgUrlList = collectionImgUrlList
           let a = picUrlAndNameList
         })
-        res.send(picUrlAndNameList)
+
         checkFolder(currentDatePath)
-        fileDownload(
-          'https://desk-fd.zol-img.com.cn/t_s1920x1080c5/g2/M00/08/0E/ChMlWV1LidqIFVMYADVD_aWv1NIAAMc2gHq4UUANUQV817.jpg'
-        )
-        // filesDownload(picUrlAndNameList, 0, picUrlAndNameList.length - 1)
+        // fileDownload(
+        //   'https://desk-fd.zol-img.com.cn/t_s1920x1080c5/g2/M00/08/0E/ChMlWV1LidqIFVMYADVD_aWv1NIAAMc2gHq4UUANUQV817.jpg'
+        // )
+        filesDownload(picUrlAndNameList, 0, picUrlAndNameList.length - 1)
+        res.send(picUrlAndNameList)
       })
     })
     .catch(error => {
@@ -62,63 +62,56 @@ function findcollectionUrl($collection) {
   })
   return collectionImgUrlList
 }
-function axiosAllRequest(array) {
-  return axios.all(
-    array.map(reqUrl => {
-      let url = reqUrl.url || reqUrl
-      return axios.get(baseUrl + url)
+function axiosAllRequest(array, type = 'text') {
+  let requestlist = array.map(reqUrl => {
+    let url = (type === 'stream' ? '' : baseUrl) + (reqUrl.url || reqUrl)
+    return axios.get(url, {
+      responseType: type
     })
-  )
+  })
+  return axios.all(requestlist)
 }
-function checkFolder(path) {
-  fs.readdir(path, (error, files) => {
+async function checkFolder(path, callback = () => {}) {
+  await fs.readdir(path, (error, files) => {
     if (error) {
       fs.mkdir(path, function(err) {
         if (err) throw err
+        else callback()
       })
+    } else {
+      callback()
     }
   })
 }
 function fileDownload(path) {
-  request(
-    {
-      url: path,
-      method: 'GET',
-      encoding: null
-    },
-    function(error, response, body) {
-      let currentCollectionPath = currentDatePath + '临时'
-      checkFolder(currentCollectionPath)
-      let filePath = `${currentCollectionPath}/1.jpg`
-      let readStream = fs.createReadStream(body)
-      let writeStream = fs.createWriteStream(filePath)
-      readStream.pipe(writeStream)
-    }
-  )
-  // axios.get(path, { responseType: 'arraybuffer' }).then(result => {
-  //   let currentCollectionPath = currentDatePath + '临时'
-  //   checkFolder(currentCollectionPath)
-  //   let filePath = `${currentCollectionPath}/1.jpg`
-  //   let readStream = fs.createReadStream(result.data)
-  //   let writeStream = fs.createWriteStream(filePath)
-  //   readStream.pipe(writeStream)
-  // })
+  axios.get(path, { responseType: 'stream' }).then(result => {
+    let currentCollectionPath = currentDatePath + '临时'
+    checkFolder(currentCollectionPath)
+    let filePath = `${currentCollectionPath}/1.jpg`
+    let readStream = fs.createReadStream(result.data)
+    let writeStream = fs.createWriteStream(filePath)
+    result.data.pipe(writeStream)
+  })
 }
 function filesDownload(picList, currentIndex, lastIndex) {
-  axiosAllRequest(picList[currentIndex].collectionImgUrlList).then(results => {
-    let currentCollectionPath =
-      currentDatePath + picList[currentIndex].folderName
-    checkFolder(currentCollectionPath)
-    results.forEach((result, index) => {
-      let filePath = `${currentCollectionPath}/${index}.jpg`
-      let readStream = result.data
-      let writeStream = fs.createWriteStream(filePath)
-      readStream.pipe(writeStream)
-    })
-    if (currentIndex !== lastIndex) {
-      filesDownload(picList, ++currentIndex, lastIndex)
+  axiosAllRequest(picList[currentIndex].collectionImgUrlList, 'stream').then(
+    results => {
+      let currentCollectionPath =
+        currentDatePath + picList[currentIndex].folderName
+      checkFolder(currentCollectionPath, () => {
+        results.forEach((result, index) => {
+          let filePath = `${currentCollectionPath}/${index}.jpg`
+          let readStream = result.data
+          let writeStream = fs.createWriteStream(filePath)
+          readStream.pipe(writeStream)
+        })
+      })
+
+      if (currentIndex !== lastIndex) {
+        filesDownload(picList, ++currentIndex, lastIndex)
+      }
     }
-  })
+  )
 }
 
 app.listen(3000, () => {
