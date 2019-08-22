@@ -6,7 +6,7 @@
       "request": "launch",
       "name": "debug-app",
       "runtimeExecutable": "nodemon",
-      "program": "${workspaceRoot}/catchMzImg.js",
+      "program": "${workspaceRoot}/index.js",
       "restart": true,
       "console": "integratedTerminal"
       // "skipFiles": [

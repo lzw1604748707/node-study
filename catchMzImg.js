@@ -84,7 +84,7 @@ async function checkFolder(path, callback = () => {}) {
   })
 }
 function fileDownload(path) {
-  axios.get(path, { responseType: 'stream' }).then(result => {
+  axios.get(path, {responseType: 'stream'}).then(result => {
     let currentCollectionPath = currentDatePath + '临时'
     checkFolder(currentCollectionPath)
     let filePath = `${currentCollectionPath}/1.jpg`
