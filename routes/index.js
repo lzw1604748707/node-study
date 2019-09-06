@@ -15,5 +15,5 @@ export default app => {
   // app.use('/v2', v2)
   // app.use('/v3', v3)
   // app.use('/v4', v4)
-  app.use('/Zol', zolWallpaper)
+  app.use('/zol', zolWallpaper)
 }
