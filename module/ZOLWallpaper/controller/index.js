@@ -52,6 +52,17 @@ class ZolWallpaperController {
       await res.send(pixelRatioList)
     })
   }
+  async getCollectionDetail(req, res, next) {
+    let postData = ''
+    req.on('data', chuck => {
+      postData += chuck
+    })
+    req.on('end', async () => {
+      postData = querystring.parse(postData)
+      let collectionDetail = await service.getCollectionDetail(postData)
+      await res.send(collectionDetail)
+    })
+  }
 }
 
 export default new ZolWallpaperController()

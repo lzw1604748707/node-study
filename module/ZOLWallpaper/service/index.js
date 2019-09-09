@@ -79,7 +79,6 @@ class ZolWallpaperService extends ReptileBaseComponent {
   async getStyleTypeList(params) {
     let styleTypeList = []
     let url = await this.completeUrl(params)
-    console.log(url)
     await this.callApi({
       url: url,
       responseType: 'arraybuffer'
@@ -178,6 +177,33 @@ class ZolWallpaperService extends ReptileBaseComponent {
         return '发送失败，获取壁纸类型错误'
       })
     return await pixelRatioList
+  }
+  async getCollectionDetail(params) {
+    let collectionDetail = {}
+    let url = this.BASEURL + params.detailUrl
+    await this.callApi({
+      url: url,
+      responseType: 'arraybuffer'
+    })
+      .then(data => {
+        const $ = cheerio.load(iconvLite.decode(data.data, 'gb2312'))
+        try {
+          collectionDetail.title = $('#titleName').text()
+          collectionDetail.author = $('.photo-opts a').text()
+          collectionDetail.likeCount = $('.favorite').text()
+          let imageList = []
+          $('#showImg li a img').each((index, urlInfo) => {
+            imageList.push(urlInfo.attribs['src'] || urlInfo.attribs['srcs'])
+          })
+          collectionDetail.imageList = imageList
+        } catch (error) {
+          return '发送失败，获取图片集错误' + error
+        }
+      })
+      .catch(error => {
+        return '发送失败，获取图片集错误'
+      })
+    return await collectionDetail
   }
 
   completeUrl(config) {
