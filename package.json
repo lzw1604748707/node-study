@@ -2,6 +2,7 @@
   "name": "eucalyptus-server",
   "description": "this is only used about project of eucalyptus ",
   "scripts": {
+    "start": "nodemon index.js",
     "test": "mocha --require ts-node/register test/**/*.ts"
   },
   "author": "lzw1604748707",
